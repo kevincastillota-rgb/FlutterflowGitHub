@@ -27,17 +27,17 @@ def scrape(url: str = Query(..., description="URL a scrapear")):
         page_title = soup.title.string if soup.title else "No title"
 
         # 🔍 EJEMPLO: extraer un texto de un div específico
-        # div_text = soup.select_one("div.result").get_text(strip=True)
+        div_text = soup.select_one("div.result").get_text(strip=True)
 
         # 🔍 EJEMPLO: extraer un número, precio, texto, etc
-        # precio = soup.find("span", {"class": "price"}).text
+        precio = soup.find("span", {"class": "price"}).text
 
         return {
             "status": "success",
             "url": url,
             "title": page_title,
-            # "resultado": div_text,
-            # "precio": precio
+            "resultado": div_text,
+            "precio": precio
         }
 
     except Exception as e:
