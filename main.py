@@ -24,49 +24,37 @@ HEADERS = {
 }
 
 
-@app.get("/amazon")
-def scrape_amazon(url: str = Query(...)):
+@app.get("/bestbuy")
+def bestbuy(url: str = Query(...)):
     try:
-        API_KEY = "cb233ab14c5fdb4325499343913b7c63"
+        # Extraer SKU desde la URL
+        sku = url.rstrip("/").split("/")[-1]
 
-        scraper_url = (
-            f"https://api.scraperapi.com/?api_key={API_KEY}&amazon=true&url={url}"
-        )
+        # API interna de BestBuy
+        api_url = f"https://www.bestbuy.com/api/3.0/clickstream/products/{sku}?sku={sku}"
 
-        response = requests.get(scraper_url)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "application/json",
+        }
+
+        response = requests.get(api_url, headers=headers)
         response.raise_for_status()
-        html = response.text
+        data = response.json()
 
-        soup = BeautifulSoup(html, "html.parser")
-
-        # Título
-        titulo = soup.select_one("#productTitle")
-        titulo = titulo.get_text(strip=True) if titulo else None
-
-        # Precio
-        precio = soup.select_one("#corePrice_feature_div .a-offscreen")
-        precio = precio.get_text(strip=True) if precio else None
-
-        # Imagen principal
-        imagen = soup.select_one("#landingImage")
-        imagen_url = imagen.get("src") if imagen else None
-
-        # Rating
-        rating = soup.select_one(".a-icon-alt")
-        rating = rating.get_text(strip=True) if rating else None
-
-        # Reviews
-        reviews = soup.select_one("#acrCustomerReviewText")
-        reviews = reviews.get_text(strip=True) if reviews else None
+        product = data.get("product", {})
 
         return {
             "status": "success",
-            "url": url,
-            "titulo": titulo,
-            "precio": precio,
-            "imagen": imagen_url,
-            "rating": rating,
-            "reviews": reviews
+            "sku": sku,
+            "titulo": product.get("names", {}).get("title"),
+            "precio": product.get("pricing", {}).get("regularPrice"),
+            "precio_oferta": product.get("pricing", {}).get("currentPrice"),
+            "imagen": product.get("images", {}).get("standard"),
+            "rating": product.get("customerReviews", {}).get("averageScore"),
+            "reviews": product.get("customerReviews", {}).get("count"),
+            "descripcion": product.get("descriptions", {}).get("short"),
+            "en_stock": product.get("availability", {}).get("displayValue"),
         }
 
     except Exception as e:
