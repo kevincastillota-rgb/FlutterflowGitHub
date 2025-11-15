@@ -13,48 +13,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "DNT": "1",
-}
+SCRAPINGBEE_API_KEY = "PH1E7FL1MKIF1U0QIQ911W6XSCD1KFEM839JMH2ZY7D7T8OPQFQHVJKC9DX7INEGON369V75FBVPO2JF"
 
-
-@app.get("/bestbuy")
-def bestbuy(url: str = Query(...)):
+@app.get("/scrapingbee")
+def scrapingbee(url: str = Query(...)):
     try:
-        # Extraer SKU desde la URL
-        sku = url.rstrip("/").split("/")[-1]
+        bee_url = (
+            f"https://app.scrapingbee.com/api/v1/"
+            f"?api_key={SCRAPINGBEE_API_KEY}"
+            f"&render_js=true"
+            f"&url={url}"
+        )
 
-        # API interna de BestBuy
-        api_url = f"https://www.bestbuy.com/api/3.0/clickstream/products/{sku}?sku={sku}"
-
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Accept": "application/json",
-        }
-
-        response = requests.get(api_url, headers=headers)
+        response = requests.get(bee_url)
         response.raise_for_status()
-        data = response.json()
+        html = response.text
 
-        product = data.get("product", {})
+        # Convertimos el HTML a un objeto BeautifulSoup
+        soup = BeautifulSoup(html, "html.parser")
+
+        # EJEMPLO: extraer título genérico
+        title = soup.title.string if soup.title else "(Sin título)"
 
         return {
             "status": "success",
-            "sku": sku,
-            "titulo": product.get("names", {}).get("title"),
-            "precio": product.get("pricing", {}).get("regularPrice"),
-            "precio_oferta": product.get("pricing", {}).get("currentPrice"),
-            "imagen": product.get("images", {}).get("standard"),
-            "rating": product.get("customerReviews", {}).get("averageScore"),
-            "reviews": product.get("customerReviews", {}).get("count"),
-            "descripcion": product.get("descriptions", {}).get("short"),
-            "en_stock": product.get("availability", {}).get("displayValue"),
+            "url": url,
+            "title": title,
+            "html_length": len(html)  # para verificar que sí aparece el HTML real
         }
 
     except Exception as e:
