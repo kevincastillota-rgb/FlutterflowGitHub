@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 
 app = FastAPI()
 
-# Permitir recibir requests desde FlutterFlow
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,31 +13,51 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/scrape")
-def scrape(url: str = Query(..., description="URL a scrapear")):
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9"
+}
+
+@app.get("/amazon")
+def scrape_amazon(url: str = Query(...)):
     try:
-        # Obtener contenido de la página
-        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        response = requests.get(url, headers=HEADERS)
         response.raise_for_status()
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # 🔍 EJEMPLO: obtener el título de la página
-        page_title = soup.title.string if soup.title else "No title"
+        # Título
+        titulo = soup.select_one("#productTitle")
+        titulo = titulo.get_text(strip=True) if titulo else None
 
-        # 🔍 EJEMPLO: extraer un texto de un div específico
-        #div_text = soup.select_one("div.result").get_text(strip=True)
+        # Precio
+        precio = soup.select_one("#corePrice_feature_div .a-offscreen")
+        precio = precio.get_text(strip=True) if precio else None
 
-        # 🔍 EJEMPLO: extraer un número, precio, texto, etc
-        #precio = soup.find("span", {"class": "price"}).text
+        # Imagen principal
+        imagen = soup.select_one("#landingImage")
+        imagen_url = imagen.get("src") if imagen else None
+
+        # Rating
+        rating = soup.select_one(".a-icon-alt")
+        rating = rating.get_text(strip=True) if rating else None
+
+        # Reviews
+        reviews = soup.select_one("#acrCustomerReviewText")
+        reviews = reviews.get_text(strip=True) if reviews else None
 
         return {
             "status": "success",
             "url": url,
-            "title": page_title,
-            #"resultado": div_text,
-            #"precio": precio
+            "titulo": titulo,
+            "precio": precio,
+            "imagen": imagen_url,
+            "rating": rating,
+            "reviews": reviews
         }
 
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {
+            "status": "error",
+            "message": str(e)
+        }
