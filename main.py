@@ -27,35 +27,23 @@ HEADERS = {
 @app.get("/amazon")
 def scrape_amazon(url: str = Query(...)):
     try:
-        HEADERS = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "DNT": "1",
-        }
+        API_KEY = "cb233ab14c5fdb4325499343913b7c63"
 
-        # 🍪 COOKIES PARA EVITAR BLOQUEOS DE AMAZON
-        cookies = {
-            "session-id": "140-1234567-9876543",
-            "session-id-time": "2082787201",
-            "i18n-prefs": "USD",
-            "lc-main": "en_US"
-        }
+        scraper_url = (
+            f"https://api.scraperapi.com/?api_key={API_KEY}&amazon=true&url={url}"
+        )
 
-        # 📌 Request con headers + cookies (MUY IMPORTANTE)
-        response = requests.get(url, headers=HEADERS, cookies=cookies, allow_redirects=True)
+        response = requests.get(scraper_url)
         response.raise_for_status()
+        html = response.text
 
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup = BeautifulSoup(html, "html.parser")
 
-        # Extraer título
+        # Título
         titulo = soup.select_one("#productTitle")
         titulo = titulo.get_text(strip=True) if titulo else None
 
-        # Extraer precio
+        # Precio
         precio = soup.select_one("#corePrice_feature_div .a-offscreen")
         precio = precio.get_text(strip=True) if precio else None
 
@@ -67,7 +55,7 @@ def scrape_amazon(url: str = Query(...)):
         rating = soup.select_one(".a-icon-alt")
         rating = rating.get_text(strip=True) if rating else None
 
-        # Total de reviews
+        # Reviews
         reviews = soup.select_one("#acrCustomerReviewText")
         reviews = reviews.get_text(strip=True) if reviews else None
 
