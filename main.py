@@ -15,8 +15,8 @@ app.add_middleware(
 
 SCRAPINGBEE_API_KEY = "PH1E7FL1MKIF1U0QIQ911W6XSCD1KFEM839JMH2ZY7D7T8OPQFQHVJKC9DX7INEGON369V75FBVPO2JF"
 
-@app.get("/scrapingbee")
-def scrapingbee(url: str = Query(...)):
+@app.get("/bestbuy-scrape")
+def bestbuy_scrape(url: str = Query(...)):
     try:
         bee_url = (
             f"https://app.scrapingbee.com/api/v1/"
@@ -29,17 +29,41 @@ def scrapingbee(url: str = Query(...)):
         response.raise_for_status()
         html = response.text
 
-        # Convertimos el HTML a un objeto BeautifulSoup
         soup = BeautifulSoup(html, "html.parser")
 
-        # EJEMPLO: extraer título genérico
-        title = soup.title.string if soup.title else "(Sin título)"
+        # ----------- BEST BUY SELECTORS -----------
+
+        # TITULO
+        titulo = None
+        titulo_el = soup.select_one(".sku-title h1")
+        if titulo_el:
+            titulo = titulo_el.get_text(strip=True)
+
+        # PRECIO
+        precio = None
+        precio_el = soup.select_one(".priceView-hero-price.priceView-customer-price span")
+        if precio_el:
+            precio = precio_el.get_text(strip=True)
+
+        # IMAGEN PRINCIPAL
+        imagen = None
+        imagen_el = soup.select_one("img.primary-image")
+        if imagen_el and imagen_el.get("src"):
+            imagen = imagen_el["src"]
+
+        # RATING
+        rating = None
+        rating_el = soup.select_one(".ugc-c-review-average")
+        if rating_el:
+            rating = rating_el.get_text(strip=True)
 
         return {
             "status": "success",
             "url": url,
-            "title": title,
-            "html_length": len(html)  # para verificar que sí aparece el HTML real
+            "titulo": titulo,
+            "precio": precio,
+            "imagen": imagen,
+            "rating": rating
         }
 
     except Exception as e:
