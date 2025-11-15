@@ -15,6 +15,37 @@ app.add_middleware(
 
 SCRAPINGBEE_API_KEY = "PH1E7FL1MKIF1U0QIQ911W6XSCD1KFEM839JMH2ZY7D7T8OPQFQHVJKC9DX7INEGON369V75FBVPO2JF"
 
+# ---------------------------
+# 🔵 ENDPOINT GENERAL SCRAPINGBEE
+# ---------------------------
+@app.get("/scrapingbee")
+def scrapingbee(url: str = Query(...)):
+    try:
+        bee_url = (
+            f"https://app.scrapingbee.com/api/v1/"
+            f"?api_key={SCRAPINGBEE_API_KEY}"
+            f"&render_js=true"
+            f"&url={url}"
+        )
+
+        response = requests.get(bee_url)
+        response.raise_for_status()
+        html = response.text
+
+        return {
+            "status": "success",
+            "url": url,
+            "html_length": len(html),
+            "preview": html[:2000]  # primeras 2000 líneas del HTML
+        }
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# ---------------------------
+# 🟦 BESTBUY SCRAPER
+# ---------------------------
 @app.get("/bestbuy-scrape")
 def bestbuy_scrape(url: str = Query(...)):
     try:
