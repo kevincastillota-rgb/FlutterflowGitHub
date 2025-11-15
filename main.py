@@ -25,6 +25,7 @@ def scrapingbee(url: str = Query(...)):
             f"https://app.scrapingbee.com/api/v1/"
             f"?api_key={SCRAPINGBEE_API_KEY}"
             f"&render_js=true"
+            f"&country_code=us"
             f"&url={url}"
         )
 
@@ -55,8 +56,7 @@ def bestbuy_scrape(url: str = Query(...)):
             f"&render_js=true"
             f"&country_code=us"
             f"&url={url}"
-)
-
+        )
 
         response = requests.get(bee_url)
         response.raise_for_status()
